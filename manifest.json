@@ -1,0 +1,20 @@
+{
+
+  "manifest_version": 2,
+  "name": "TabGroup",
+  "version": "0.0.1",
+
+  "description": "Group tabs by some domain",
+
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "contextMenus"
+  ],
+
+  
+  "background": {
+    "scripts": ["js/background-script.js"]
+  }
+  
+}
