@@ -10,8 +10,33 @@ function onCreated() {
   }
 }
 
+function extractHostname(url) {
+  return url.replace('http://','').replace('https://','').split(/[/?#]/)[0];
+}
+
+function extractRootDomain(url) {
+    var domain = extractHostname(url),
+        splitArr = domain.split('.'),
+        arrLen = splitArr.length;
+
+    //extracting the root domain here
+    //if there is a subdomain 
+    if (arrLen > 2) {
+        domain = splitArr[arrLen - 2] + '.' + splitArr[arrLen - 1];
+        //check to see if it's using a Country Code Top Level Domain (ccTLD) (i.e. ".me.uk")
+        if (splitArr[arrLen - 1].length == 2 && splitArr[arrLen - 1].length == 2) {
+            //this is using a ccTLD
+            domain = splitArr[arrLen - 3] + '.' + domain;
+        }
+    }
+
+    return domain;
+}
+
 function GetDomain(url) {
-	return url.replace('http://','').replace('https://','').split(/[/?#]/)[0];
+	//return url.replace('http://','').replace('https://','').split(/[/?#]/)[0];
+	domain = extractRootDomain(url)
+	return domain.replace(/([^\/]+):([0-9]+)/, "$1");
 }
 
 
@@ -23,7 +48,7 @@ function CreateContextMenus(tab) {
 		title: domain,
 		contexts: ["all"],
 	}, onCreated);
-	
+
 	browser.contextMenus.create({
 		id: tab.id.toString(),
 		title: tab.title,
@@ -54,7 +79,7 @@ function RemoveContextMenus(tabId) {
 		count = DomainMap[domain]
 		if(count != undefined) {
 			DomainMap[domain] = count-1
-			console.log(DomainMap[domain])
+			//console.log(DomainMap[domain])
 			if(DomainMap[domain] == 0) {
 				DomainMap.delete(domain)
 				browser.contextMenus.remove(domain)
@@ -70,6 +95,19 @@ function CreateMenus() {
 			CreateContextMenus(tab)
 		})
 	})
+}
+
+function UpdateContextMenus(tabId, tab) {
+	
+	OldDomain = TabIdToDomain[tabId]
+	NewDomain = GetDomain(tab.url)
+	
+	if(OldDomain == NewDomain) {
+		browser.contextMenus.update(tabId.toString(), {title: tab.title});
+	}else {
+		RemoveContextMenus(tabId)
+		CreateContextMenus(tab)
+	}
 }
 
 browser.contextMenus.onClicked.addListener(function(info, tab) {
@@ -95,8 +133,11 @@ browser.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 	//console.log(tabId)
 	//console.log(changeInfo)
 	
-	RemoveContextMenus(tabId)
-	CreateContextMenus(tab)
+	if(!changeInfo.title)
+		return
+	
+	UpdateContextMenus(tabId, tab)
+
 })
 
 
